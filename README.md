@@ -3,10 +3,23 @@
 芝加哥打字机&lt;大雾>~~不是~~
 
 ```ts
-type Error = {
-  code: number;
-  reason: string;
+type Response<T> = {
+  200: {
+    code: number;
+    data: T;
+  };
+  500: {
+    code: number;
+    reason: string;
+  };
 };
+
+class User {
+  uid: number;
+  name: string;
+  createTime: number;
+}
+
 type GetUser = {
   method: "GET";
   path: "{{APIHOST}}/get/user/:uid";
@@ -14,25 +27,18 @@ type GetUser = {
     maybe?: string;
   };
   body: {
-    list: string[];
+    list: User[];
   };
-  response: {
-    200: {
-      uid: number;
-      name: string;
-    };
-    500: {
-      message: string;
-    };
-  };
+  response: Response<{
+    uid: number;
+    name: string;
+  }>;
 };
 
 type UpdateUser = {
   method: "POST";
   path: "{{APIHOST}}/post/user/:uid";
-  body: {
-    list: string[];
-  };
+  body: Partical<User> & Pick<User, "uid">;
   response: {
     200: {
       uid: number;
