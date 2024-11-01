@@ -1,64 +1,267 @@
-type Resp<T> = {
-  200: {
-    code: number;
-    data: T;
-  };
-  500: {
-    code: number;
-    reason: string;
-  };
-};
+// ------type helper -------
 
-class Post {
-  title: string;
-  content: string;
-}
+type OmitThenRequired<
+  T,
+  OmitedProps extends keyof T,
+  RquiredProps extends keyof T
+> = Omit<Partial<T>, OmitedProps> & Pick<T, RquiredProps>;
+
+type OmitThenOptional<
+  T,
+  OmitedProps extends keyof T,
+  OptionalProps extends keyof T
+> = Omit<Partial<T>, OmitedProps> & Partial<Pick<T, OptionalProps>>;
+type Resp<T> = {
+  code: number;
+  data: T;
+};
+type Reason<Tip = never> = {
+  code: number;
+  reason: string;
+  type: string;
+};
+// ------defs--------------------
+
+type Status = "placed" | "approved" | "delivered";
 
 class User {
-  uid: number;
-  name: string;
-  avatar: string;
-  createTime: number;
-  posts: Post[];
+  id: number;
+  username: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone: string;
+  userStatus: number;
 }
 
-type GetUserById = {
-  method: "GET";
-  path: "{{APIHOST}}/get/user/:uid";
-  response: Resp<User>;
+class Order {
+  id: number;
+  petId: number;
+  quantity: number;
+  shipDate: string;
+  status: Status;
+}
+
+class Tag {
+  id: number;
+  name: string;
+}
+
+class Pet {
+  id: number;
+  category: Category;
+  name: string;
+  photoUrls: string[];
+  tags: Tag[];
+  status: Status;
+}
+
+class Category {
+  id: number;
+  name: string;
+}
+
+// ---------- pet
+
+type UploadAnImage = {
+  POST: "pet/:petId/uploadImage";
+  path: {
+    petId: Pet["id"];
+  };
+  formData: {
+    additionalMetadata: string;
+    file: File;
+  };
+  resp: Reason;
 };
 
-type QueryUserList = {
-  method: "GET";
-  path: "{{APIHOST}}/user/list";
+type AddaNewPetToTheStore = {
+  POST: "/pet";
+  body: OmitThenRequired<Pet, "id", "name" | "photoUrls">;
+  resp: Resp<Pet>;
+  reason: {
+    405: Reason<"Invalid Input">;
+  };
+};
+
+type UpdateAnExistingPet = {
+  POST: "/pet";
+  body: OmitThenRequired<Pet, never, "id" | "name" | "photoUrls">;
+  resp: Resp<Pet>;
+  reason: {
+    400: Reason<"Invalid ID supplied">;
+    404: Reason<"Pet not Found">;
+    405: Reason<"Validation exception">;
+  };
+};
+
+type FindsPetsByStatus = {
+  GET: "/pet/findByStatus";
   query: {
-    name?: User["name"];
+    status: Status[];
   };
-  response: Resp<{
-    records: User[];
-    total: number;
-  }>;
-  // https://ts-ast-viewer.com/#code/C4TwDgpgBAShDOYA8AVAfFAvFA3gKCigCYAGEgLlwMKgGMB7AEwkoDsBXAWwCMIAnANzVCjAIbBRlFEMIBfGVACsZSvhp0mLKBx78FhPhFHx6rSvGB8AlqwDmC+Xkd4bwfgDNRtaAAV6FqkJgK2AAGy0LazsFBlY3OPNLG3snPBc4jy9oAFV4fkCoditGNi5eQWpWUU4IpOjqUQA3cVE+RKiUwlpDcQgUKxrS3QrCMH9geEo-CwBtAF0hWTTQSCgAcQhgXP4AIRAASUYsAprgAAsmSgAiNYBRFCuFMHEz65wcAEEffYAJAHkAMooWSyAD0tk2oPYeT4oPIRUYj2ohkQpjylDgiCQ2z4aEWQjwK2gAEV2PwQDiADJWALYNRQU4XEpQG73JGjF5vT7ff5AkFQmGg0I04DsqAARzJfBAqmE2mqEAA-JQcTMrlUalcFtRHAYEGNWOjYPqkPS9Qw+IxJlBVdr1MB6BJQkNyg48dQIAAPapgcKy9SSKAARgANHLuJQiGH1LRrvArtGaMyAOSibi0RjJuVjCzWmY4KDBMJaK6iR6F8Al+NQWRzROEK4QKrccJXSiWMn1lmsMDwQ5tlmkIgAZhIABYiGOE3KrmI3DBRHYIAOZnL1Fch8OALRjreT6fqdebreKLdBxRXOV1mcSPgQrYwldrmhXB3sawWS-qa-rout66AAbygAU6oAWJqAOSagDQXoAZXqAFBygBY8oAFcaAArBgBrcoAXXKAP7ygAUroAiv6AK4ZgASToA8DqAEV+gBmcoA+P8Hi+PbwAuS5PoeNAkF26ihs+hBRhxUDDqxNBjnxhCKIJUAAGwiQA7CJAAcIkAJwiUGJBXl2r5nCiFyhIilCyTe1i2BCfDxv6TEso0NIhAAsgAYgOvHcVc5kQAA7gAco6CADkpIlXBYoggJZNjsG4xlKHKsiqZKCDBKYVRWIYA5moer4hP+LKAO-RgB3qYAVyqANlymWABkZgCO+oAsyqAGFygAVBoAIW7IYA8IaAPyGFGABD-gD3yiBgCQCYAkP-UUxpaGs5-ChaupmHklI2-qly7XIAaZl4U1gCLyoADc54Z12GAMrygAxWYAwfGAHe6PXjeuzShGSA5XNwoiMAA+u4EAQFdXqQNYTbeF+B01iJ6hjW9KXFqdgAo3oADdGAGfRgCjBnhVXrdte0faZjmiMdU0sudV2sB5l0PfwVjPcu3HqBFuM0F9B0-WlVyAFRyaGANxy4OQ7t+1vWZ8MndcyOXdC-CXc8ELo56j1Y6wL0E3IMOEET40k4jVyAPlKgC-AYAXP6AIya9PfUdzMsqEXgANaXfQ7jXewAsxYar0HfjDNiyNEunchgChioAndqALBygA5qoARNbK8TquS4wNLCprECXYYDCcDUrDMIiQvvRHFuw3+kv24AYEqAN4+UCglAgCJGYAygmAIg67vi57p03c5l20Gci6sBAoTxhHZtvdHvWx6dgA4JoARL6yw7gC+mlhueW-nLMXZdeStCXPN89jJvjTXB118lDfXIAAOmAIGRgDzfoAHHqAN5ugCq+oAZLGAO-K3ew73LKcOww+hPQtiXTY48jZP43TxNv3XIAbooofvvWH1cjpnPw1+mUsI1zHCqkQgTgCREigAAYR6G4HExx6SMkuCyHwgIHhPE5Cyd4XxfgoP5OzWE3QjBuDFNwJgMooB-E4CEbEMIQwsmKFcKAAAfFkBDej9E1O6PUqJDRaExMgJKgd6CWmtLafQhZHTwxdHoHU7pnDgOyGAOcEBYF0moAg5kVwfDZFQdQZ45wuRYN5MCMEOZgACn4HCBExDSFTFaMEeGSAKFUJxLQq4rC3DsOXGgDAAAyKAPgrC0E1tQ-grirGcKgCiA0Ro+EhNxPiPAQA
-  example: {
-    targetUser: ["tourist"];
-    title: "你在多大程度上会推荐他人使用网页版小红书？";
-    npsRange: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  resp: Resp<Pet[]>;
+  reason: {
+    400: Reason<"Invalid status value">;
   };
 };
 
-type CreateUser = {
-  method: "POST";
-  path: "{{APIHOST}}/user/create";
-  body: Omit<User, "id" | "createTime">;
-  response: Resp<{
-    records: User[];
-    total: number;
-  }>;
+/** @deprecated */
+type FindsPetsByTags = {
+  GET: "/pet/findByTags";
+  query: {
+    tags: Status[];
+  };
+  resp: Resp<Pet[]>;
+  reason: {
+    400: Reason<"Invalid tag value">;
+  };
+};
+
+type FindPetById = {
+  GET: "/pet/:petId";
+  path: {
+    petId: Pet["id"];
+  };
+  resp: Resp<Pet>;
+  reason: {
+    400: Reason<"Invalid ID supplied">;
+    404: Reason<"Pet not found">;
+  };
+};
+
+type UpdatesAPetInTheStoreWithFormData = {
+  GET: "/pet/:petId";
+  path: {
+    petId: Pet["id"];
+  };
+  formData: {
+    name: Pet["name"];
+    status: Pet["status"];
+  };
+  resp: Resp<Pet>;
+  reason: {
+    405: Reason<"Invalid input">;
+  };
+};
+
+type DeletesAPet = {
+  DELETE: "/pet/:petId";
+  headrs: {
+    api_key: string;
+  };
+  path: {
+    petId: Pet["id"];
+  };
+  resp: {
+    405: Reason<"Invalid input">;
+    400: Reason<"Pet not found">;
+  };
+};
+
+// store
+
+type ReturnsPetInventoriesbyStatus = {
+  GET: "/store/inventory";
+  resp: Resp<Record<string, number>>;
+};
+
+type PlaceAnOrderForAPet = {
+  GET: "/store/order";
+  body: Order;
+  resp: Resp<Order>;
+  reason: Reason<"Invalid Order">;
+};
+
+type FindPurchaseOrderById = {
+  GET: "/store/order/:orderId";
+  path: {
+    orderId: Order["id"];
+  };
+  resp: Resp<Order>;
+  reason: {
+    400: Reason<"Invalid ID supplied">;
+    404: Reason<"Order not found">;
+  };
+};
+
+type DeletePurchaseOrderById = {
+  DELETE: "/store/order/:orderId";
+  path: {
+    orderId: Order["id"];
+  };
+  reason: {
+    400: Reason<"Invalid ID supplied">;
+    404: Reason<"Order not found">;
+  };
+};
+
+// ----user
+
+type CreateListOfUsersWithGivenInputArray = {
+  GET: "/user/createWithList";
+  body: User[];
+};
+
+type GetUserByUserName = {
+  GET: "/user/:username";
+  path: {
+    username: User["username"];
+  };
+  resp: User;
+  reason: {
+    400: Reason<"Invalid username supplied">;
+    404: Reason<"User Not Found">;
+  };
 };
 
 type UpdateUser = {
-  method: "PUT";
-  path: "{{APIHOST}}/post/user/:uid";
-  body: Partial<Omit<User, "createTime">> & Pick<User, "uid">;
-  response: Resp<User>;
+  PUT: "/user/:username";
+  path: {
+    username: User["username"];
+  };
+  body: Pick<User, "username"> & OmitThenOptional<User, "username", never>;
+  reason: {
+    400: Reason<"Invalid username supplied">;
+    404: Reason<"User not found">;
+  };
+};
+
+type DeleteUser = {
+  DELETE: "/user/:username";
+  path: { username: User["username"] };
+  reason: {
+    400: Reason<"Invalid username supplied">;
+    404: Reason<"User not found">;
+  };
+};
+
+type LogsUserIntoTheSystem = {
+  GET: "/user/login";
+  query: Pick<User, "username" | "password">;
+  resp: {
+    200: Resp<string>;
+    headers: {
+      "X-Expires-After": string;
+      "X-Rate-Limit": number;
+    };
+  };
+  reason: {
+    400: Reason<"Invalid username/password supplied">;
+  };
+};
+
+type LogsoutCurrentLoggedInUserSession = {
+  GET: "/user/logout";
+};
+
+type CreatesListOfUsersWithGivenInputArray = {
+  POST: "/user/createWithArray";
+  body: User[];
+};
+
+type CreateUser = {
+  POST: "/user";
+  body: User;
 };
