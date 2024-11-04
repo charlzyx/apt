@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "module": "Node16",
+    "module": "CommonJS",
     "noEmit": true,
+    "isolatedModules": true,
     "skipLibCheck": true,
     "esModuleInterop": false
   },

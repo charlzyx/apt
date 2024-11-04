@@ -1,3 +1,36 @@
+type int32 = number;
+type int64 = number;
+type float = number;
+type double = number;
+type date = string;
+type datetime = string;
+type password = string;
+type binary = string;
+type byte = string;
+
+type OmitAndRequired<
+  T,
+  OmitedProps extends keyof T,
+  RquiredProps extends keyof T
+> = Omit<Partial<T>, OmitedProps> & Pick<T, RquiredProps>;
+
+type OmitAndOptional<
+  T,
+  OmitedProps extends keyof T,
+  OptionalProps extends keyof T
+> = Omit<Partial<T>, OmitedProps> & Partial<Pick<T, OptionalProps>>;
+
+// type WithHeaders<
+//   CustomeHeaders extends Partial<
+//     Record<BuiltInHttpHeaders, string | number>
+//   > = {}
+// > = CustomeHeaders & {};
+
+// type WithContentType<
+//   T,
+//   ContentType extends BuiltInContentType = "application/json"
+// > = T;
+
 // https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers
 type BuiltInHttpHeaders =
   | "Accept"
@@ -101,11 +134,12 @@ type BuiltInHttpHeaders =
 // https://developer.mozilla.org/zh-CN/docs/Web/HTTP/MIME_types
 // https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST
 
-type MIME =
+type BuiltInContentType =
   | "application/json"
   | "multipart/form-data"
   | "text/plain"
   | "application/octet-stream"
+  | "application/xml"
   | "application/x-www-form-urlencoded"
   | "application/pdf"
   | "application/zip"

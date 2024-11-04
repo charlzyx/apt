@@ -54,7 +54,7 @@ type 多状态响应值 = {
 ```
 
 ```ts
-type get = {
+export type get = {
   headers: WithHeaders<{
     Authorization: string;
   }>;

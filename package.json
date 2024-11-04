@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/charlzyx/api-typewriter#readme",
   "dependencies": {
+    "ts-morph": "^24.0.0",
     "typescript": "^5.6.3"
   }
 }
