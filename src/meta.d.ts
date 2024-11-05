@@ -6,9 +6,9 @@ type Resp<
   HTTPStateCode = 200,
   Headers extends Partial<Record<BuiltInHttpHeaders, string>> = {}
 > = {
-  code: int32;
+  // code: int32;
   data: T;
-  message: string;
+  // message: string;
 };
 
 type Reason<
