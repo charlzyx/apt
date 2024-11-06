@@ -10,7 +10,7 @@ import fs from 'fs'
 
 const project = new Project({});
 project.addSourceFilesAtPaths("./src/*.d.ts");
-project.addSourceFilesAtPaths("./src/Pet/createPet.ts");
+project.addSourceFilesAtPaths("./src/**/*.ts");
 
 const isNode = (typeNode: any): typeNode is Node =>
   typeof typeNode?.getType === "function";
@@ -47,12 +47,13 @@ const mergeProps = (
     return {
       type: "string",
       enums: one.map((item) => item.value!),
+      isOptional: isOptional ? true: undefined,
       jsDoc,
     };
   } else if (only) {
     return {
       ...one,
-      isOptional,
+      isOptional: isOptional ? true: undefined,
       jsDoc,
     };
   }
@@ -66,8 +67,11 @@ const parserTypeNode = (typeNode: Node | Type): any => {
   if (!type) return "notype";
 
   const base = {
-    _fullName: type.getSymbol()?.getFullyQualifiedName(),
+    _class: type.getSymbol()?.getFullyQualifiedName(),
   };
+  if (/__type|Object|Array/.test(base._class || '')) {
+    delete base._class
+  }
 
   if (type.isString()) return { type: "string", ...base };
   if (type.isBoolean()) return { type: "boolean", ...base };
@@ -92,9 +96,10 @@ const parserTypeNode = (typeNode: Node | Type): any => {
       const node = propSymbol.getValueDeclaration();
       const isOptional = propSymbol.hasFlags(SymbolFlags.Optional);
       const jsDoc = propSymbol.getJsDocTags()?.reduce((map, tag) => {
+        map = map || {}
         map[tag.getName()] = tag.getText();
         return map;
-      }, {});
+      }, undefined as any);
 
       if (node) {
         const stype = propSymbol.getTypeAtLocation(node);
@@ -143,6 +148,8 @@ const parserMethodTypeAliasDeclaration = (signature: Type) => {
   return props;
 };
 
+fs.writeFileSync("./ret.json", "", 'utf-8')
+const apis: any[] = []
 project.getSourceFiles().forEach((sourceFile) => {
   if (sourceFile.isDeclarationFile()) return;
 
@@ -159,7 +166,9 @@ project.getSourceFiles().forEach((sourceFile) => {
   const methodType = methodStatement.getSymbol()?.getDeclaredType();
   if (!methodType) return;
   const api = parserMethodTypeAliasDeclaration(methodType);
+  apis.push(api)
 
-  fs.writeFileSync("./ret.json", JSON.stringify(api, null, 2), 'utf-8')
   console.log(api);
 });
+
+fs.appendFileSync("./ret.json", JSON.stringify(apis, null, 2), 'utf-8')
