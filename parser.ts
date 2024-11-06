@@ -6,6 +6,7 @@ import {
   Type,
   PropertySignature,
 } from "ts-morph";
+import fs from 'fs'
 
 const project = new Project({});
 project.addSourceFilesAtPaths("./src/*.d.ts");
@@ -36,7 +37,7 @@ const mergeProps = (
   isOptional: boolean,
   jsDoc: Record<string, string>
 ) => {
-  console.log("🚀 ~ mergeProps ~ props:", props);
+  // console.log("🚀 ~ mergeProps ~ props:", props);
   // length > 1 means union
   const only = props.length === 1;
   const one = props[0];
@@ -90,21 +91,19 @@ const parserTypeNode = (typeNode: Node | Type): any => {
 
       const node = propSymbol.getValueDeclaration();
       const isOptional = propSymbol.hasFlags(SymbolFlags.Optional);
-      const jsDoc = propSymbol.getJsDocTags().reduce((map, tag) => {
+      const jsDoc = propSymbol.getJsDocTags()?.reduce((map, tag) => {
         map[tag.getName()] = tag.getText();
         return map;
-      });
+      }, {});
 
       if (node) {
         const stype = propSymbol.getTypeAtLocation(node);
         const init = (node as PropertySignature).getInitializer()?.getText();
-        const ret = parserTypeNode(stype);
+        const prop = parserTypeNode(stype);
         return {
           [name]: {
-            ...ret,
+            ...mergeProps([prop], isOptional, jsDoc),
             init,
-            jsDoc,
-            isOptional,
           },
         };
       } else {
@@ -161,5 +160,6 @@ project.getSourceFiles().forEach((sourceFile) => {
   if (!methodType) return;
   const api = parserMethodTypeAliasDeclaration(methodType);
 
+  fs.writeFileSync("./ret.json", JSON.stringify(api, null, 2), 'utf-8')
   console.log(api);
 });

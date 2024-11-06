@@ -1,0 +1,429 @@
+{
+  "url": {
+    "type": "literal",
+    "value": "{{SERVER}}/pet"
+  },
+  "query": [
+    {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "isOptional": false,
+              "jsDoc": {}
+            },
+            "name": {
+              "type": "string",
+              "isOptional": false,
+              "jsDoc": {}
+            }
+          },
+          "_fullName": "Category",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "number",
+                "isOptional": false,
+                "jsDoc": {}
+              },
+              "name": {
+                "type": "string",
+                "isOptional": false,
+                "jsDoc": {}
+              }
+            },
+            "_fullName": "Tag"
+          },
+          "_fullName": "Array",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "status": {
+          "type": "string",
+          "enums": [
+            "placed",
+            "approved",
+            "delivered"
+          ],
+          "jsDoc": {}
+        },
+        "name": {
+          "type": "string",
+          "isOptional": true,
+          "jsDoc": {}
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "username": {
+          "type": "number",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "firstName": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "lastName": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "email": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "password": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "phone": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "userStatus": {
+          "type": "number",
+          "isOptional": false,
+          "jsDoc": {}
+        }
+      },
+      "_fullName": "User"
+    }
+  ],
+  "body": {
+    "type": "object",
+    "properties": {
+      "name": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "photoUrls": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "_fullName": "Array"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "_fullName": "Array"
+        }
+      ],
+      "category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "isOptional": false,
+            "jsDoc": {}
+          },
+          "name": {
+            "type": "string",
+            "isOptional": false,
+            "jsDoc": {}
+          }
+        },
+        "_fullName": "Category",
+        "isOptional": true,
+        "jsDoc": {}
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "isOptional": false,
+              "jsDoc": {}
+            },
+            "name": {
+              "type": "string",
+              "isOptional": false,
+              "jsDoc": {}
+            }
+          },
+          "_fullName": "Tag"
+        },
+        "_fullName": "Array",
+        "isOptional": true,
+        "jsDoc": {}
+      },
+      "status": {
+        "type": "string",
+        "enums": [
+          "placed",
+          "approved",
+          "delivered"
+        ],
+        "jsDoc": {}
+      }
+    }
+  },
+  "resp": [
+    {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "isOptional": false,
+              "jsDoc": {},
+              "init": "0"
+            },
+            "category": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number",
+                  "isOptional": false,
+                  "jsDoc": {}
+                },
+                "name": {
+                  "type": "string",
+                  "isOptional": false,
+                  "jsDoc": {}
+                }
+              },
+              "_fullName": "Category",
+              "isOptional": false,
+              "jsDoc": {}
+            },
+            "name": {
+              "type": "string",
+              "isOptional": false,
+              "jsDoc": {},
+              "init": "\"hi\""
+            },
+            "photoUrls": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "_fullName": "Array",
+              "isOptional": false,
+              "jsDoc": {}
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "number",
+                    "isOptional": false,
+                    "jsDoc": {}
+                  },
+                  "name": {
+                    "type": "string",
+                    "isOptional": false,
+                    "jsDoc": {}
+                  }
+                },
+                "_fullName": "Tag"
+              },
+              "_fullName": "Array",
+              "isOptional": false,
+              "jsDoc": {}
+            },
+            "status": {
+              "type": "string",
+              "enums": [
+                "placed",
+                "approved",
+                "delivered"
+              ],
+              "jsDoc": {}
+            }
+          },
+          "_fullName": "Pet",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "message": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        }
+      },
+      "_fullName": "__type"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "isOptional": false,
+              "jsDoc": {},
+              "init": "0"
+            },
+            "category": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number",
+                  "isOptional": false,
+                  "jsDoc": {}
+                },
+                "name": {
+                  "type": "string",
+                  "isOptional": false,
+                  "jsDoc": {}
+                }
+              },
+              "_fullName": "Category",
+              "isOptional": false,
+              "jsDoc": {}
+            },
+            "name": {
+              "type": "string",
+              "isOptional": false,
+              "jsDoc": {},
+              "init": "\"hi\""
+            },
+            "photoUrls": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "_fullName": "Array",
+              "isOptional": false,
+              "jsDoc": {}
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "number",
+                    "isOptional": false,
+                    "jsDoc": {}
+                  },
+                  "name": {
+                    "type": "string",
+                    "isOptional": false,
+                    "jsDoc": {}
+                  }
+                },
+                "_fullName": "Tag"
+              },
+              "_fullName": "Array",
+              "isOptional": false,
+              "jsDoc": {}
+            },
+            "status": {
+              "type": "string",
+              "enums": [
+                "placed",
+                "approved",
+                "delivered"
+              ],
+              "jsDoc": {}
+            }
+          },
+          "_fullName": "Pet",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "message": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        }
+      },
+      "_fullName": "__type"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "reason": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        }
+      },
+      "_fullName": "__type"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "reason": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        }
+      },
+      "_fullName": "__type"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "isOptional": false,
+          "jsDoc": {}
+        },
+        "reason": {
+          "type": "string",
+          "isOptional": false,
+          "jsDoc": {}
+        }
+      },
+      "_fullName": "__type"
+    }
+  ]
+}
