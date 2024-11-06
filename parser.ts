@@ -1,17 +1,11 @@
 import {
-  ModuleKind,
-  SourceFile,
-  Symbol,
-  Project,
-  PropertySignature,
-  ScriptTarget,
-  TypeNode,
+  SymbolFlags,
   Node,
-  Signature,
+  Project,
+  Symbol,
   Type,
-  printNode,
+  PropertySignature,
 } from "ts-morph";
-import * as ts from "typescript";
 
 const project = new Project({});
 project.addSourceFilesAtPaths("./src/*.d.ts");
@@ -21,60 +15,113 @@ const isNode = (typeNode: any): typeNode is Node =>
   typeof typeNode?.getType === "function";
 const getTypeOfNodeOrType = (typeNode: Node | Type): Type | undefined => {
   if (isNode(typeNode)) {
-    // const dt = typeNode.getSymbol()?.getValueDeclaration();
-    // return Node.isTypeReference(typeNode)
-    //   ? typeNode.getSymbol()?.getTypeAtLocation(typeNode)
-    //   : dt?.getType();
     return typeNode.getType();
   } else {
     return typeNode;
   }
 };
 
+const arrayToMap = (maybe) => {
+  if (Array.isArray(maybe)) {
+    return maybe.reduce((map, item) => {
+      map = { ...map, ...item };
+      return map;
+    }, {});
+  }
+  return maybe;
+};
+
+const mergeProps = (
+  props: Array<{ type: string } | { type: string; [x: string]: any }[]>,
+  isOptional: boolean,
+  jsDoc: Record<string, string>
+) => {
+  console.log("🚀 ~ mergeProps ~ props:", props);
+  // length > 1 means union
+  const only = props.length === 1;
+  const one = props[0];
+  const isTypeAliasUnionEnum =
+    Array.isArray(one) && one.every((x) => x.type === "literal");
+  if (isTypeAliasUnionEnum) {
+    return {
+      type: "string",
+      enums: one.map((item) => item.value!),
+      jsDoc,
+    };
+  } else if (only) {
+    return {
+      ...one,
+      isOptional,
+      jsDoc,
+    };
+  }
+  // todo
+  return props;
+};
+
 const parserTypeNode = (typeNode: Node | Type): any => {
   const type = getTypeOfNodeOrType(typeNode);
 
-  if (!type) return "typenotfound";
+  if (!type) return "notype";
 
-  if (type.isString()) return "string";
-  if (type.isBoolean()) return "boolean";
-  if (type.isNumber()) return "number";
-  if (type.isLiteral()) return type.getLiteralValue();
+  const base = {
+    _fullName: type.getSymbol()?.getFullyQualifiedName(),
+  };
+
+  if (type.isString()) return { type: "string", ...base };
+  if (type.isBoolean()) return { type: "boolean", ...base };
+  if (type.isNumber()) return { type: "number", ...base };
+  if (type.isLiteral())
+    return { type: "literal", value: type.getLiteralValue(), ...base };
 
   if (type.isArray()) {
     const item = type.getArrayElementTypeOrThrow();
-    return parserTypeNode(item);
+    return { type: "array", items: parserTypeNode(item), ...base };
   }
 
   if (type.isUnion()) {
+    // Array means union
     return type.getUnionTypes().map(parserTypeNode);
   }
 
-  if (type.isIntersection()) {
-    return type.getIntersectionTypes().map(parserTypeNode);
-  }
+  if (type.isObject() || type.isClassOrInterface() || type.isIntersection()) {
+    const props = type.getProperties().map((propSymbol) => {
+      const name = propSymbol.getName();
 
-  if (type.isObject()) {
-    let properties = type.getApparentProperties();
+      const node = propSymbol.getValueDeclaration();
+      const isOptional = propSymbol.hasFlags(SymbolFlags.Optional);
+      const jsDoc = propSymbol.getJsDocTags().reduce((map, tag) => {
+        map[tag.getName()] = tag.getText();
+        return map;
+      });
 
-    console.log("🚀 ~ parserTypeNode ~ properties:", properties);
-    // const members = type.getSymbol()?.getMembers();
-    // console.log("🚀 ~ parserTypeNode ~ members:", members);
-    const props = properties.map((symbol) => {
-      const name = symbol.getName();
-      const type = symbol.getTypeAtLocation(symbol.getValueDeclaration()!);
-      const maybe = parserTypeNode(type);
-      if (maybe !== "unparsed") {
-        return maybe;
+      if (node) {
+        const stype = propSymbol.getTypeAtLocation(node);
+        const init = (node as PropertySignature).getInitializer()?.getText();
+        const ret = parserTypeNode(stype);
+        return {
+          [name]: {
+            ...ret,
+            init,
+            jsDoc,
+            isOptional,
+          },
+        };
       } else {
-        const dts = symbol.getDeclarations();
-        return { [name]: dts.map(parserTypeNode) };
+        const dts = propSymbol.getDeclarations();
+        const subProps = dts.map(parserTypeNode);
+        return {
+          [name]: mergeProps(subProps, isOptional, jsDoc),
+        };
       }
     });
 
-    return props;
+    return {
+      type: "object",
+      properties: arrayToMap(props),
+      ...base,
+    };
   }
-  return "unparsed";
 };
 const parserMethodTypeAliasDeclaration = (signature: Type) => {
   const props = [
@@ -104,13 +151,11 @@ project.getSourceFiles().forEach((sourceFile) => {
   const methodStatement = sourceFile.getStatements().find((statement) => {
     const kindName = statement.getKindName();
     const name = statement.getSymbol()?.getName();
-    console.log("🚀 ~ method ~ name:", kindName, name);
     return (
       "TypeAliasDeclaration" === kindName &&
       /get|post|put|del|option|trace/i.test(name!)
     );
   });
-  console.log("🚀 ~ methodStatement ~ methodStatement:", methodStatement);
   if (!methodStatement) return;
   const methodType = methodStatement.getSymbol()?.getDeclaredType();
   if (!methodType) return;

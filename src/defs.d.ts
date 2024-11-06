@@ -45,9 +45,9 @@ class Tag {
 }
 
 class Pet {
-  id: int64;
+  id: int64 = 0;
   category: Category;
-  name: string;
+  name: string = "hi";
   photoUrls: string[];
   tags: Tag[];
   status: Status;
