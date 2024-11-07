@@ -45,9 +45,13 @@ class Tag {
 }
 
 class Pet {
+  /** Pet's id */
   id: int64 = 0;
-  category: Category;
+  // getJsDocs() cannot see me
+  category: Category; // but getLeadingCommentRanges/getTrailingCommentRanges can do it!
+  // name with default
   name: string = "hi";
+  /** photos */
   photoUrls: string[];
   tags: Tag[];
   status: Status;

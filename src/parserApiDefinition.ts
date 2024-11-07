@@ -7,7 +7,9 @@ import {
   Type,
   ClassDeclaration,
   InterfaceDeclaration,
+  PropertyDeclaration,
 } from "ts-morph";
+import * as ts from "typescript";
 import { parserGenericDefinition } from "./parserGenericDefinition";
 
 const HTTP_METHODS = /get|post|put|del|option|trace/i;
@@ -27,8 +29,10 @@ const resolveProps = (
   // length > 1 means union
   const only = props.length === 1;
   const one = props[0];
+
   const isTypeAliasUnionEnum =
-    Array.isArray(one) && one.every((x) => x.type === "literal");
+    only && Array.isArray(one) && one.every((x) => x.type === "literal");
+
   if (isTypeAliasUnionEnum) {
     return {
       type: "string",
@@ -39,12 +43,14 @@ const resolveProps = (
   }
   return props;
 };
+
 const markRefIfHas = (type: Type) => {
   const maybe = type.getSymbol()?.getValueDeclaration?.();
 
   if (
-    maybe.isKind(SyntaxKind.ClassDeclaration) ||
-    maybe.isKind(SyntaxKind.InterfaceDeclaration)
+    maybe &&
+    (maybe.isKind(SyntaxKind.ClassDeclaration) ||
+      maybe.isKind(SyntaxKind.InterfaceDeclaration))
   ) {
     return {
       name: maybe.getName(),
@@ -70,6 +76,9 @@ const resolveType = (
   if (type.isBoolean() || type.isBooleanLiteral()) {
     return { type: "boolean", ...base };
   }
+  if (type.isLiteral()) {
+    return { type: "literal", value: type.getLiteralValue(), ...base };
+  }
   if (type.isArray()) {
     const item = type.getArrayElementType();
     return { type: "array", items: resolveType(item, genericDts) };
@@ -84,16 +93,33 @@ const resolveType = (
     const propertiesSymbols = type.getProperties();
     const props = propertiesSymbols.map((symbol) => {
       const name = symbol.getName();
-      const node = symbol.getValueDeclaration();
-      const jsDoc = symbol.getJsDocTags()?.reduce((map, tag) => {
-        map = map || {};
-        const t = tag.getName();
-        map[t] = tag
-          .getText()
-          .map((seg) => seg.text)
-          .join("|");
-        return map;
-      }, undefined as Record<string, string>);
+      const node = symbol.getValueDeclaration() as unknown as
+        | PropertyDeclaration
+        | undefined;
+      const before = node.getLeadingCommentRanges();
+      const after = node.getTrailingCommentRanges();
+      const blines = before.map((item) => item.getText());
+      const alines = after.map((item) => item.getText());
+      console.log({ alines, blines });
+
+      const jsDocs = node?.getJsDocs().map((jsDoc) => {
+        const txt = jsDoc.getText();
+        const inner = jsDoc.getInnerText();
+        const cc = jsDoc.getComment();
+        const cct = jsDoc.getCommentText();
+        const desc = jsDoc.getDescription();
+        return jsDoc;
+      });
+
+      // ..reduce((map, tag) => {
+      //   map = map || {};
+      //   const t = tag.getName();
+      // map[t] = tag
+      //   .getText()
+      //   .map((seg) => seg.text)
+      //   .join("|");
+      // return map;
+      // }, undefined as Record<string, string>);
       if (node) {
         const fullType = symbol.getTypeAtLocation(node);
         const resolved = resolveType(fullType, genericDts);
