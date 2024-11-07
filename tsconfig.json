@@ -8,6 +8,7 @@
     "esModuleInterop": false
   },
   "include": [
-    "./src"
+    "./src",
+    "./example"
   ]
 }

@@ -5,12 +5,13 @@ import {
   Symbol,
   Type,
   PropertySignature,
+  TypeAliasDeclaration,
 } from "ts-morph";
-import fs from 'fs'
+import fs from "fs";
 
 const project = new Project({});
-project.addSourceFilesAtPaths("./src/*.d.ts");
-project.addSourceFilesAtPaths("./src/**/*.ts");
+project.addSourceFilesAtPaths("./example/*.d.ts");
+project.addSourceFilesAtPaths("./example/**/*.ts");
 
 const isNode = (typeNode: any): typeNode is Node =>
   typeof typeNode?.getType === "function";
@@ -37,7 +38,6 @@ const mergeProps = (
   isOptional: boolean,
   jsDoc: Record<string, string>
 ) => {
-  // console.log("🚀 ~ mergeProps ~ props:", props);
   // length > 1 means union
   const only = props.length === 1;
   const one = props[0];
@@ -47,13 +47,13 @@ const mergeProps = (
     return {
       type: "string",
       enums: one.map((item) => item.value!),
-      isOptional: isOptional ? true: undefined,
+      isOptional: isOptional ? true : undefined,
       jsDoc,
     };
   } else if (only) {
     return {
       ...one,
-      isOptional: isOptional ? true: undefined,
+      isOptional: isOptional ? true : undefined,
       jsDoc,
     };
   }
@@ -61,17 +61,55 @@ const mergeProps = (
   return props;
 };
 
+const getWrapper = () => {
+  const ans = { resp: null as unknown, reason: null as unknown };
+  project.getSourceFiles().forEach((sourceFile) => {
+    if (!sourceFile.isDeclarationFile()) return;
+    const respTypeAliasDeclaration = sourceFile
+      .getStatements()
+      .find((statement) => {
+        const kindName = statement.getKindName();
+        const name = statement.getSymbol()?.getName();
+        return "TypeAliasDeclaration" === kindName && /Resp/i.test(name!);
+      }) as TypeAliasDeclaration | undefined;
+    const reasonTypeAliasDeclaration = sourceFile
+      .getStatements()
+      .find((statement) => {
+        const kindName = statement.getKindName();
+        const name = statement.getSymbol()?.getName();
+        return "TypeAliasDeclaration" === kindName && /Reason/i.test(name!);
+      }) as TypeAliasDeclaration | undefined;
+    if (respTypeAliasDeclaration && reasonTypeAliasDeclaration) {
+      const resp = {
+        name: respTypeAliasDeclaration.getName(),
+        symbol: respTypeAliasDeclaration.getSymbol(),
+        params: respTypeAliasDeclaration.getTypeParameters(),
+      };
+      const reason = {
+        name: reasonTypeAliasDeclaration.getName(),
+        symbol: reasonTypeAliasDeclaration.getSymbol(),
+        params: reasonTypeAliasDeclaration.getTypeParameters(),
+      };
+      console.log({ respTypeAliasDeclaration, reasonTypeAliasDeclaration });
+      ans.resp = resp;
+      ans.reason = reason;
+    }
+  });
+  return ans;
+};
+
+const wrapper = getWrapper();
+
 const parserTypeNode = (typeNode: Node | Type): any => {
   const type = getTypeOfNodeOrType(typeNode);
 
   if (!type) return "notype";
 
   const base = {
-    _class: type.getSymbol()?.getFullyQualifiedName(),
+    _class: type.getSymbol()?.getValueDeclaration?.(),
   };
-  if (/__type|Object|Array/.test(base._class || '')) {
-    delete base._class
-  }
+
+  console.log("base", base);
 
   if (type.isString()) return { type: "string", ...base };
   if (type.isBoolean()) return { type: "boolean", ...base };
@@ -90,13 +128,26 @@ const parserTypeNode = (typeNode: Node | Type): any => {
   }
 
   if (type.isObject() || type.isClassOrInterface() || type.isIntersection()) {
+    const aliasSymbol = type.getAliasSymbol();
+    const { resp, reason } = wrapper;
+    if (aliasSymbol === resp?.symbol) {
+      const aliasParams = type.getAliasTypeArguments();
+      const symbolParams = resp.params;
+      console.log({ aliasParams, symbolParams });
+    }
+    if (aliasSymbol === reason?.symbol) {
+      const aliasParams = type.getAliasTypeArguments();
+      const symbolParams = reason.params;
+      console.log({ aliasParams, symbolParams });
+    }
+
     const props = type.getProperties().map((propSymbol) => {
       const name = propSymbol.getName();
 
       const node = propSymbol.getValueDeclaration();
       const isOptional = propSymbol.hasFlags(SymbolFlags.Optional);
       const jsDoc = propSymbol.getJsDocTags()?.reduce((map, tag) => {
-        map = map || {}
+        map = map || {};
         map[tag.getName()] = tag.getText();
         return map;
       }, undefined as any);
@@ -148,27 +199,31 @@ const parserMethodTypeAliasDeclaration = (signature: Type) => {
   return props;
 };
 
-fs.writeFileSync("./ret.json", "", 'utf-8')
-const apis: any[] = []
+fs.writeFileSync("./ret.json", "", "utf-8");
+
+const apis: any[] = [];
+
 project.getSourceFiles().forEach((sourceFile) => {
   if (sourceFile.isDeclarationFile()) return;
 
   // get method type declaration
-  const methodStatement = sourceFile.getStatements().find((statement) => {
-    const kindName = statement.getKindName();
-    const name = statement.getSymbol()?.getName();
-    return (
-      "TypeAliasDeclaration" === kindName &&
-      /get|post|put|del|option|trace/i.test(name!)
-    );
-  });
-  if (!methodStatement) return;
-  const methodType = methodStatement.getSymbol()?.getDeclaredType();
+  const methodTypeAliasDeclaration = sourceFile
+    .getStatements()
+    .find((statement) => {
+      const kindName = statement.getKindName();
+      const name = statement.getSymbol()?.getName();
+      return (
+        "TypeAliasDeclaration" === kindName &&
+        /get|post|put|del|option|trace/i.test(name!)
+      );
+    }) as TypeAliasDeclaration | undefined;
+  if (!methodTypeAliasDeclaration) return;
+  const methodType = methodTypeAliasDeclaration.getSymbol()?.getDeclaredType();
   if (!methodType) return;
   const api = parserMethodTypeAliasDeclaration(methodType);
-  apis.push(api)
+  apis.push(api);
 
   console.log(api);
 });
 
-fs.appendFileSync("./ret.json", JSON.stringify(apis, null, 2), 'utf-8')
+fs.appendFileSync("./ret.json", JSON.stringify(apis, null, 2), "utf-8");
