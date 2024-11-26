@@ -1,3 +1,3 @@
-# api-typewriter
+# Api TypeScript => APT
 
-芝加哥打字机&lt;大雾>~~不是~~
+~~芝加哥打字机~~
